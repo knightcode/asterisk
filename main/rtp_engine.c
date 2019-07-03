@@ -1184,6 +1184,7 @@ char *ast_rtp_lookup_mime_multiple2(struct ast_str *buf, struct ast_format_cap *
 int ast_rtp_instance_dtmf_begin(struct ast_rtp_instance *instance, char digit)
 {
 	int res;
+	ast_log(LOG_ERROR, "RedRoute rtp_engine - ast_rtp_instance_dtmf_begin.\n");
 
 	if (instance->engine->dtmf_begin) {
 		ao2_lock(instance);
@@ -1198,6 +1199,7 @@ int ast_rtp_instance_dtmf_begin(struct ast_rtp_instance *instance, char digit)
 int ast_rtp_instance_dtmf_end(struct ast_rtp_instance *instance, char digit)
 {
 	int res;
+	ast_log(LOG_ERROR, "RedRoute rtp_engine - ast_rtp_instance_dtmf_end.\n");
 
 	if (instance->engine->dtmf_end) {
 		ao2_lock(instance);
@@ -1212,6 +1214,7 @@ int ast_rtp_instance_dtmf_end(struct ast_rtp_instance *instance, char digit)
 int ast_rtp_instance_dtmf_end_with_duration(struct ast_rtp_instance *instance, char digit, unsigned int duration)
 {
 	int res;
+	ast_log(LOG_ERROR, "RedRoute rtp_engine - ast_rtp_instance_dtmf_end_with_duration.\n");
 
 	if (instance->engine->dtmf_end_with_duration) {
 		ao2_lock(instance);
@@ -1226,6 +1229,7 @@ int ast_rtp_instance_dtmf_end_with_duration(struct ast_rtp_instance *instance, c
 int ast_rtp_instance_dtmf_mode_set(struct ast_rtp_instance *instance, enum ast_rtp_dtmf_mode dtmf_mode)
 {
 	int res;
+	ast_log(LOG_ERROR, "RedRoute rtp_engine - ast_rtp_instance_dtmf_mode_set.\n");
 
 	if (instance->engine->dtmf_mode_set) {
 		ao2_lock(instance);

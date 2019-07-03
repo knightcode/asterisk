@@ -936,6 +936,7 @@ static void do_forward(struct chanlist *o, struct cause_args *num,
 	int cause;
 	struct ast_party_caller caller;
 
+	ast_log(LOG_ERROR, "RedRoute - Do Forward\n");
 	ast_copy_string(forwarder, ast_channel_name(c), sizeof(forwarder));
 	ast_copy_string(tmpchan, ast_channel_call_forward(c), sizeof(tmpchan));
 	if ((stuff = strchr(tmpchan, '/'))) {
@@ -1137,6 +1138,7 @@ struct privacy_args {
 
 static void publish_dial_end_event(struct ast_channel *in, struct dial_head *out_chans, struct ast_channel *exception, const char *status)
 {
+	ast_log(LOG_ERROR, "RedRoute - Publish Dial End Event %x\n", in);
 	struct chanlist *outgoing;
 	AST_LIST_TRAVERSE(out_chans, outgoing, node) {
 		if (!outgoing->chan || outgoing->chan == exception) {
@@ -1159,6 +1161,7 @@ static void publish_dial_end_event(struct ast_channel *in, struct dial_head *out
  */
 static void update_connected_line_from_peer(struct ast_channel *chan, struct ast_channel *peer, int is_caller)
 {
+	ast_log(LOG_ERROR, "RedRoute - Update Connected Line From Peer %x\n", chan);
 	struct ast_party_connected_line connected_caller;
 
 	ast_party_connected_line_init(&connected_caller);
@@ -1182,6 +1185,8 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 	const int ignore_cc,
 	struct ast_party_id *forced_clid, struct ast_party_id *stored_clid)
 {
+	ast_log(LOG_ERROR, "RedRoute - wait for answer %x\n", in);
+
 	struct cause_args num = *num_in;
 	int prestart = num.busy + num.congestion + num.nochan;
 	int orig = *to;
@@ -1660,6 +1665,7 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 
 			/* now f is guaranteed non-NULL */
 			if (f->frametype == AST_FRAME_DTMF) {
+				ast_log(LOG_ERROR, "RedRoute - wait for answer 1668, seeing DTMF frame %x\n", in);
 				if (ast_test_flag64(peerflags, OPT_DTMF_EXIT)) {
 					const char *context;
 					ast_channel_lock(in);
@@ -1800,6 +1806,7 @@ skip_frame:;
 
 static int detect_disconnect(struct ast_channel *chan, char code, struct ast_str **featurecode)
 {
+	ast_log(LOG_ERROR, "RedRoute - detecting disconnect %x\n", chan);
 	char disconnect_code[AST_FEATURE_MAX_LEN];
 	int res;
 
@@ -2084,6 +2091,7 @@ static void end_bridge_callback(void *data)
 
 	time(&end);
 
+	ast_log(LOG_ERROR, "RedRoute - End Bridge Callback %x\n", chan);
 	ast_channel_lock(chan);
 	ast_channel_stage_snapshot(chan);
 	snprintf(buf, sizeof(buf), "%d", ast_channel_get_up_time(chan));
@@ -2142,6 +2150,8 @@ static int dial_handle_playtones(struct ast_channel *chan, const char *data)
  */
 static void setup_peer_after_bridge_goto(struct ast_channel *chan, struct ast_channel *peer, struct ast_flags64 *opts, char *opt_args[])
 {
+	ast_log(LOG_ERROR, "RedRoute - setup peer after bridge goto %x\n", chan);
+
 	const char *context;
 	const char *extension;
 	int priority;
@@ -2164,6 +2174,8 @@ static void setup_peer_after_bridge_goto(struct ast_channel *chan, struct ast_ch
 
 static int dial_exec_full(struct ast_channel *chan, const char *data, struct ast_flags64 *peerflags, int *continue_exec)
 {
+	ast_log(LOG_ERROR, "RedRoute - Dial exec full %x\n", chan);
+
 	int res = -1; /* default: error */
 	char *rest, *cur; /* scan the list of destinations */
 	struct dial_head out_chans = AST_LIST_HEAD_NOLOCK_INIT_VALUE; /* list of destinations */
@@ -2898,6 +2910,7 @@ static int dial_exec_full(struct ast_channel *chan, const char *data, struct ast
 					switch (fr->frametype) {
 					case AST_FRAME_DTMF_END:
 						digit = fr->subclass.integer;
+						ast_log(LOG_ERROR, "RedRoute - Dial exec full, 2913, DTMF End  %c\n", digit);
 						if (active_chan == peer && strchr(AST_DIGIT_ANY, res)) {
 							ast_stopstream(peer);
 							res = ast_senddigit(chan, digit, 0);
@@ -3256,6 +3269,7 @@ done:
 
 static int dial_exec(struct ast_channel *chan, const char *data)
 {
+	ast_log(LOG_ERROR, "RedRoute - Dial Exec %x\n", chan);
 	struct ast_flags64 peerflags;
 
 	memset(&peerflags, 0, sizeof(peerflags));

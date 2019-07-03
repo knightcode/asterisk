@@ -1735,31 +1735,40 @@ static int chan_pjsip_digit_begin(struct ast_channel *chan, char digit)
 
 	switch (channel->session->dtmf) {
 	case AST_SIP_DTMF_RFC_4733:
+		ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_begin AST_SIP_DTMF_RFC_4733.\n");
 		if (!media || !media->rtp) {
+			ast_log(LOG_ERROR, "RedRoute chan_pjsip - NO MEDIA OR MEDIA RTP.\n");
 			return -1;
 		}
 
 		ast_rtp_instance_dtmf_begin(media->rtp, digit);
 		break;
 	case AST_SIP_DTMF_AUTO:
+		ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_begin AST_SIP_DTMF_AUTO.\n");
 		if (!media || !media->rtp || (ast_rtp_instance_dtmf_mode_get(media->rtp) == AST_RTP_DTMF_MODE_INBAND)) {
+			ast_log(LOG_ERROR, "RedRoute chan_pjsip - NO MEDIA OR MEDIA RTP OR MODE INBAND.\n");
 			return -1;
 		}
 
 		ast_rtp_instance_dtmf_begin(media->rtp, digit);
 		break;
 	case AST_SIP_DTMF_AUTO_INFO:
+		ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_begin AST_SIP_DTMF_AUTO_INFO.\n");
 		if (!media || !media->rtp || (ast_rtp_instance_dtmf_mode_get(media->rtp) == AST_RTP_DTMF_MODE_NONE)) {
+			ast_log(LOG_ERROR, "RedRoute chan_pjsip - NO MEDIA OR MEDIA RTP OR MODE NONE.\n");
 			return -1;
 		}
 		ast_rtp_instance_dtmf_begin(media->rtp, digit);
 		break;
 	case AST_SIP_DTMF_NONE:
+		ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_begin AST_SIP_DTMF_NONE (nothing happens).\n");
 		break;
 	case AST_SIP_DTMF_INBAND:
+		ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_begin AST_SIP_DTMF_INBAND (nothing happens).\n");
 		res = -1;
 		break;
 	default:
+		ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_begin default (nothing happens).\n");
 		break;
 	}
 
@@ -1857,6 +1866,7 @@ static int chan_pjsip_digit_end(struct ast_channel *ast, char digit, unsigned in
 	case AST_SIP_DTMF_AUTO_INFO:
 	{
 		if (!media || !media->rtp) {
+			ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_end AST_SIP_DTMF_AUTO_INFO no media or no rtp.\n");
 			return -1;
 		}
 		if (ast_rtp_instance_dtmf_mode_get(media->rtp) != AST_RTP_DTMF_MODE_NONE) {
@@ -1873,6 +1883,7 @@ static int chan_pjsip_digit_end(struct ast_channel *ast, char digit, unsigned in
 		struct info_dtmf_data *dtmf_data = info_dtmf_data_alloc(channel->session, digit, duration);
 
 		if (!dtmf_data) {
+			ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_end AST_SIP_DTMF_AUTO_INFO no dtmf data.\n");
 			return -1;
 		}
 
@@ -1895,6 +1906,7 @@ static int chan_pjsip_digit_end(struct ast_channel *ast, char digit, unsigned in
 		break;
 	}
 	case AST_SIP_DTMF_RFC_4733:
+		ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_end AST_SIP_DTMF_RFC_4733.\n");
 		if (!media || !media->rtp) {
 			return -1;
 		}
@@ -1902,6 +1914,7 @@ static int chan_pjsip_digit_end(struct ast_channel *ast, char digit, unsigned in
 		ast_rtp_instance_dtmf_end_with_duration(media->rtp, digit, duration);
 		break;
 	case AST_SIP_DTMF_AUTO:
+		ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_end AST_SIP_DTMF_AUTO.\n");
 		if (!media || !media->rtp || (ast_rtp_instance_dtmf_mode_get(media->rtp) == AST_RTP_DTMF_MODE_INBAND)) {
 			 return -1;
 		}
@@ -1911,8 +1924,10 @@ static int chan_pjsip_digit_end(struct ast_channel *ast, char digit, unsigned in
 
 
 	case AST_SIP_DTMF_NONE:
+		ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_end AST_SIP_DTMF_NONE.\n");
 		break;
 	case AST_SIP_DTMF_INBAND:
+		ast_log(LOG_ERROR, "RedRoute chan_pjsip - chan_pjsip_digit_end AST_SIP_DTMF_INBAND.\n");
 		res = -1;
 		break;
 	}

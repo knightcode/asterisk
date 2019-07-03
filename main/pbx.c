@@ -4289,6 +4289,7 @@ static enum ast_pbx_result __ast_pbx_run(struct ast_channel *c,
 			S_COR(ast_channel_caller(c)->id.number.valid, ast_channel_caller(c)->id.number.str, NULL),
 			&found, 1))) {
 
+			ast_log(LOG_ERROR, "RedRoute - pbx.c 4292. __ast_pbx_run after ast_spawn_extension.\n");
 			if (!ast_check_hangup(c)) {
 				ast_channel_priority_set(c, ast_channel_priority(c) + 1);
 				continue;

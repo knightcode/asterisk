@@ -2441,6 +2441,7 @@ static void bridge_handle_trip(struct ast_bridge_channel *bridge_channel)
 {
 	struct ast_frame *frame;
 
+	ast_log(LOG_ERROR, "RedRoute - bridge_channel.c 2444. bridge_handle_trip calling ast_read.\n");
 	if (bridge_channel->features->mute) {
 		frame = ast_read_noaudio(bridge_channel->chan);
 	} else {

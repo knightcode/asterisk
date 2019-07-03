@@ -671,6 +671,7 @@ int ast_bridge_call_with_flags(struct ast_channel *chan, struct ast_channel *pee
 	ast_bridge_join(bridge, chan, NULL, &chan_features, NULL,
 		AST_BRIDGE_JOIN_PASS_REFERENCE | AST_BRIDGE_JOIN_INHIBIT_JOIN_COLP);
 
+	ast_log(LOG_ERROR, "RedRoute - bridge finished.\n");
 	/*
 	 * If the bridge was broken for a hangup that isn't real, then
 	 * don't run the h extension, because the channel isn't really

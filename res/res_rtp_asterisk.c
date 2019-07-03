@@ -2510,6 +2510,7 @@ static int __rtp_recvfrom(struct ast_rtp_instance *instance, void *buf, size_t s
 #endif
 
 	if ((len = ast_recvfrom(rtcp ? rtp->rtcp->s : rtp->s, buf, size, flags, sa)) < 0) {
+	   ast_log(LOG_ERROR, "RedRoute - error result from ast_recvfrom\n");
 	   return len;
 	}
 
@@ -4772,6 +4773,7 @@ static struct ast_frame *ast_rtcp_interpret(struct ast_rtp_instance *instance, c
 
 	packetwords = size / 4;
 
+	ast_log(LOG_ERROR, "RedRoute - res_rtp_asterisk 4775 start of ast_rtcp_interpret \n");
 	ast_debug(1, "Got RTCP report of %zu bytes from %s\n",
 		size, ast_sockaddr_stringify(addr));
 
@@ -5077,6 +5079,7 @@ static struct ast_frame *ast_rtcp_read(struct ast_rtp_instance *instance)
 	size_t read_area_size = sizeof(rtcpdata) - AST_FRIENDLY_OFFSET;
 	int res;
 
+	ast_log(LOG_ERROR, "RedRoute - start ast_rtcp_read\n");
 	/* Read in RTCP data from the socket */
 	if ((res = rtcp_recvfrom(instance, read_area, read_area_size,
 				0, &addr)) < 0) {
@@ -5086,11 +5089,13 @@ static struct ast_frame *ast_rtcp_read(struct ast_rtp_instance *instance)
 				(errno) ? strerror(errno) : "Unspecified");
 			return NULL;
 		}
+		ast_log(LOG_ERROR, "RedRoute - res_rtp_asterisk 5090 ast_rtcp_read returning NULL\n");
 		return &ast_null_frame;
 	}
 
 	/* If this was handled by the ICE session don't do anything further */
 	if (!res) {
+		ast_log(LOG_ERROR, "RedRoute - res_rtp_asterisk 5090 ast_rtcp_read no 'res'\n");
 		return &ast_null_frame;
 	}
 
@@ -5289,11 +5294,13 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 	struct ast_sockaddr remote_address = { {0,} };
 	struct frame_list frames;
 
+	ast_log(LOG_ERROR, "RedRoute - start ast_rtp_read\n");
 	/* If this is actually RTCP let's hop on over and handle it */
 	if (rtcp) {
 		if (rtp->rtcp && rtp->rtcp->type == AST_RTP_INSTANCE_RTCP_STANDARD) {
 			return ast_rtcp_read(instance);
 		}
+		ast_log(LOG_ERROR, "RedRoute - ast_rtp_read returning null frame, not rtcp\n");
 		return &ast_null_frame;
 	}
 
@@ -5311,16 +5318,19 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 				(errno) ? strerror(errno) : "Unspecified");
 			return NULL;
 		}
+		ast_log(LOG_ERROR, "RedRoute - ast_rtp_read bad result code from rtp_recvfrom\n");
 		return &ast_null_frame;
 	}
 
 	/* If this was handled by the ICE session don't do anything */
 	if (!res) {
+		ast_log(LOG_ERROR, "RedRoute - ast_rtp_read no result from rtp_recvfrom\n");
 		return &ast_null_frame;
 	}
 
 	/* This could be a multiplexed RTCP packet. If so, be sure to interpret it correctly */
 	if (rtcp_mux(rtp, read_area)) {
+		ast_log(LOG_ERROR, "RedRoute - rtcp_mux, returning interpret\n");
 		return ast_rtcp_interpret(instance, read_area, res, &addr);
 	}
 
@@ -5334,6 +5344,7 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 				return &ast_null_frame;
 			}
 		}
+		ast_log(LOG_ERROR, "RedRoute - ast_rtp_read not enough read for one RTP packet\n");
 		return &ast_null_frame;
 	}
 
@@ -5361,11 +5372,13 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 			ast_sockaddr_from_sin(&addr, &addr_tmp);
 			ast_rtp_instance_set_remote_address(instance, &addr);
 		}
+		ast_log(LOG_ERROR, "RedRoute - ast_rtp_read version-seqno, returning null frame\n");
 		return &ast_null_frame;
 	}
 
 	/* If the version is not what we expected by this point then just drop the packet */
 	if (version != 2) {
+		ast_log(LOG_ERROR, "RedRoute - ast_rtp_read bad version number\n");
 		return &ast_null_frame;
 	}
 
@@ -5485,6 +5498,7 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 				ast_debug(1, "%p -- Received RTP packet from %s, dropping due to strict RTP protection. Qualifying new stream.\n",
 					rtp, ast_sockaddr_stringify(&addr));
 			}
+			ast_log(LOG_ERROR, "RedRoute - STRICT_RTP_LEARN returning null frame \n");
 			return &ast_null_frame;
 		}
 		/* Fall through */
@@ -5640,7 +5654,7 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 		while ((f = AST_LIST_REMOVE_HEAD(&frames, frame_list)) != NULL) {
 			ast_frfree(f);
 		}
-
+		ast_log(LOG_ERROR, "RedRoute - bridge_p2p_rtp_write succeeded, returning NULL frame \n");
 		return &ast_null_frame;
 	}
 
@@ -5664,6 +5678,7 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 			 * by passing the pointer to the frame list to it so that the method
 			 * can append frames to the list as needed.
 			 */
+			ast_log(LOG_ERROR, "RedRoute - processing DTMF packet\n");
 			process_dtmf_rfc2833(instance, read_area + hdrlen, res - hdrlen, seqno, timestamp, &addr, payloadtype, mark, &frames);
 		} else if (payload->rtp_code == AST_RTP_CISCO_DTMF) {
 			f = process_dtmf_cisco(instance, read_area + hdrlen, res - hdrlen, seqno, timestamp, &addr, payloadtype, mark);
@@ -5681,6 +5696,7 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 		/* Even if no frame was returned by one of the above methods,
 		 * we may have a frame to return in our frame list
 		 */
+		ast_log(LOG_ERROR, "RedRoute - error result from ast_recvfrom\n");
 		return AST_LIST_FIRST(&frames) ? AST_LIST_FIRST(&frames) : &ast_null_frame;
 	}
 
