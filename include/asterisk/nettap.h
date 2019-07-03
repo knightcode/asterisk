@@ -8,7 +8,7 @@ struct redroute_packet_entry {
     AST_LIST_ENTRY(redroute_packet_entry) next;
 };
 
-static AST_LIST_HEAD(redroute_packets, redroute_packet_entry);
+//static AST_LIST_HEAD(redroute_packet_queue, redroute_packet_entry);
 
 int redroute_init_pcap();
 

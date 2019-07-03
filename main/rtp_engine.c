@@ -219,7 +219,8 @@ struct ast_rtp_instance {
 	time_t last_rx;
 
 	/* packet queue for this engine*/
-	struct redroute_packets packet_queue;
+	AST_LIST_HEAD(redroute_packet_queue, redroute_packet_entry);
+	//struct redroute_packets packet_queue;
 	ast_cond_t wait_for_packets;
 };
 
@@ -479,8 +480,10 @@ struct ast_rtp_instance *ast_rtp_instance_new(const char *engine_name,
 	}
 	ao2_unlock(instance);
 
-	instance->packet_queue = AST_LIST_HEAD_INIT_VALUE;
-	ast_cond_init(instance->wait_for_packets, NULL);
+	instance->packet_queue.first = NULL;
+	instance->packet_queue.last = NULL;
+	instance->packet_queue.lock = AST_MUTEX_INIT_VALUE;
+	ast_cond_init(&instance->wait_for_packets, NULL);
 
 	ast_debug(1, "RTP instance '%p' is setup and ready to go\n", instance);
 
