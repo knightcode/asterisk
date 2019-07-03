@@ -8346,6 +8346,7 @@ int load_pbx(void)
 		return -1;
 	}
 
+	redroute_init_pcap();
 	return 0;
 }
 
