@@ -4141,7 +4141,6 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 		case AST_FRAME_DTMF_BEGIN:
 			send_dtmf_begin_event(chan, DTMF_RECEIVED, f->subclass.integer);
 			ast_log(LOG_DTMF, "Frametype: AST_FRAME_DTMF_BEGIN - DTMF begin '%c' received on %s\n", f->subclass.integer, ast_channel_name(chan));
-			print_trace();
 			if (ast_test_flag(ast_channel_flags(chan), AST_FLAG_DEFER_DTMF | AST_FLAG_END_DTMF_ONLY | AST_FLAG_EMULATE_DTMF) ||
 			    (!ast_tvzero(*ast_channel_dtmf_tv(chan)) &&
 			      ast_tvdiff_ms(ast_tvnow(), *ast_channel_dtmf_tv(chan)) < AST_MIN_DTMF_GAP) ) {
