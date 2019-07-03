@@ -13,58 +13,14 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/network.h"
 #include "asterisk/utils.h"
 
-char *__get_pcap_device() {
-  char *dev; /* name of the device to use */ 
-  char *net; /* dot notation of the network address */
-  char *mask;/* dot notation of the network mask    */
-  int ret;   /* return code */
-  char errbuf[PCAP_ERRBUF_SIZE];
-  bpf_u_int32 netp; /* ip          */
-  bpf_u_int32 maskp;/* subnet mask */
+
+
+void log_addr (char* label, bpf_u_int32 address) {
   struct in_addr addr;
-
-  /* ask pcap to find a valid device for use to sniff on */
-  dev = pcap_lookupdev(errbuf);
-
-  /* error checking */
-  if(dev == NULL) {
-    ast_log(LOG_ERROR, "%s\n", errbuf);
-    return NULL;
-  }
-
-  /* print out device name */
-  ast_log(LOG_NOTICE, "DEV: %s\n", dev);
-
-  /* ask pcap for the network address and mask of the device */
-  ret = pcap_lookupnet(dev,&netp,&maskp,errbuf);
-
-  if(ret == -1) {
-    ast_log(LOG_ERROR, "%s\n", errbuf);
-    return dev;
-  }
-
-  /* get the network address in a human readable form */
-  addr.s_addr = netp;
+  char* net;
+  addr.s_addr = address;
   net = ast_inet_ntoa(addr);
-
-  if(net == NULL) {
-    ast_log(LOG_ERROR, "inet_ntoa");
-    return dev;
-  }
-
-  ast_log(LOG_NOTICE, "NET: %s\n", net);
-
-  /* do the same as above for the device's mask */
-  addr.s_addr = maskp;
-  mask = ast_inet_ntoa(addr);
-  
-  if(mask == NULL) {
-    ast_log(LOG_ERROR, "inet_ntoa");
-    return dev;
-  }
-  
-  ast_log(LOG_NOTICE, "MASK: %s\n", mask);
-  return dev;
+  ast_log(LOG_NOTICE, "%s: %s\n",label, net);
 }
 
 void process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_char* packet) {
@@ -72,35 +28,34 @@ void process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_ch
 }
 
 static void *nettap_thread(void *data) {
-  ast_log(LOG_DEBUG, "Started Net Capture Thread\n");
-  
-  int i;
+  int ret;
   char* dev;
   char errbuf[PCAP_ERRBUF_SIZE];
   pcap_t* descr;
+  bpf_u_int32 net_ip;
+  bpf_u_int32 mask_ip;
   struct bpf_program fp;
 
   u_char *ptr; /* printing out hardware header info */
 
-  dev = __get_pcap_device();
+  ast_log(LOG_DEBUG, "Started Net Capture Thread\n");
 
-  if (dev == NULL) {
-    ast_log(LOG_ERROR, "Couldn't get pcap device!!!!");
-    return;
-  }
+  dev = pcap_lookupdev(errbuf);
+
+  if (dev == NULL) { ast_log(LOG_ERROR, "Couldn't get pcap device!!!!"); return; }
+
+  ret = pcap_lookupnet(dev, &net_ip, &mask_ip, errbuf);
+  if(ret == -1) { ast_log(LOG_ERROR, "%s\n", errbuf); return dev; }
+
+  log_addr("NET:", net_ip);
+  log_addr("MASK:", mask_ip);
 
   descr = pcap_open_live(dev,BUFSIZ, 0, -1, errbuf);
 
-  if (descr == NULL) {
-    ast_log(LOG_ERROR, "pcap_open_live(): %s\n", errbuf);
-    return;
-  }
+  if (descr == NULL) { ast_log(LOG_ERROR, "pcap_open_live(): %s\n", errbuf); return;}
 
-  if(pcap_compile(descr,&fp,argv[1],0,netp) == -1)
-  { fprintf(stderr,"Error calling pcap_compile\n"); exit(1); }
-
-  if(pcap_setfilter(descr,&fp) == -1)
-  { fprintf(stderr,"Error setting filter\n"); exit(1); }
+  /*if(pcap_compile(descr, &fp, "dst host ", 0, mask_ip) == -1) { ast_log(LOG_ERROR, "Error calling pcap_compile\n"); return; }
+  /if(pcap_setfilter(descr, &fp) == -1) { ast_log(LOG_ERROR,"Error setting filter\n"); return; }*/
 
   pcap_loop(descr, -1, process_packet, NULL);
 }
@@ -115,6 +70,6 @@ static void ast_nettap_start()
   }
 }
 
-int redroute_init_pcap() {
+void redroute_init_pcap() {
   ast_nettap_start();
 }
