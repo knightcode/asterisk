@@ -220,6 +220,7 @@ struct ast_rtp_instance {
 
 	/* packet queue for this engine*/
 	struct redroute_packets packet_queue;
+	ast_cond_t wait_for_packets;
 };
 
 /*! List of RTP engines that are currently registered */
@@ -479,6 +480,7 @@ struct ast_rtp_instance *ast_rtp_instance_new(const char *engine_name,
 	ao2_unlock(instance);
 
 	instance->packet_queue = AST_LIST_HEAD_INIT_VALUE;
+	ast_cond_init(instance->wait_for_packets, NULL);
 
 	ast_debug(1, "RTP instance '%p' is setup and ready to go\n", instance);
 
