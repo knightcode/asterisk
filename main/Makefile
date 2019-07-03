@@ -48,7 +48,7 @@ AST_LIBS+=$(RT_LIB)
 AST_LIBS+=$(SYSTEMD_LIB)
 
 ifneq ($(findstring $(OSARCH), linux-gnu uclinux linux-uclibc kfreebsd-gnu),)
-  AST_LIBS+=-ldl
+  AST_LIBS+=-ldl -lpcap
   ifneq (x$(CAP_LIB),x)
     AST_LIBS+=$(CAP_LIB)
   endif
