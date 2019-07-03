@@ -3948,7 +3948,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			f = &ast_null_frame;
 			ast_channel_alert_write(chan);
 		} else {
-			ast_log(LOG_ERROR, "RedRoute - dequeued a frame from read queue");
+			ast_log(LOG_ERROR, "RedRoute - dequeued a frame from read queue\n");
 		}
 
 		/* Interpret hangup and end-of-Q frames to return NULL */

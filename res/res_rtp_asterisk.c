@@ -5294,7 +5294,7 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 	struct ast_sockaddr remote_address = { {0,} };
 	struct frame_list frames;
 
-	ast_log(LOG_ERROR, "RedRoute - start ast_rtp_read\n");
+	/*ast_log(LOG_ERROR, "RedRoute - start ast_rtp_read\n");*/
 	/* If this is actually RTCP let's hop on over and handle it */
 	if (rtcp) {
 		if (rtp->rtcp && rtp->rtcp->type == AST_RTP_INSTANCE_RTCP_STANDARD) {
