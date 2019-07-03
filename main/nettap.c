@@ -17,7 +17,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/network.h"
 #include "asterisk/utils.h"
 
-
+void log_addr (char* label, bpf_u_int32 address);
+int perform_filter(pcap_t* descr, struct bpf_program* fp, bpf_u_int32 net_ip, bpf_u_int32 mask_ip);
+void process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_char* packet);
+static void nettap_thread(void *data);
+static void ast_nettap_start();
 
 void log_addr (char* label, bpf_u_int32 address) {
   struct in_addr addr;
@@ -39,7 +43,7 @@ int perform_filter(pcap_t* descr, struct bpf_program* fp, bpf_u_int32 net_ip, bp
   return 0;
 }
 
-void __process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_char* packet) {
+void process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_char* packet) {
   struct ip* ip_hdr;
   struct udphdr* udp_hdr;
   
@@ -49,7 +53,7 @@ void __process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_
     ast_inet_ntoa(ip_hdr->ip_src), udp_hdr->uh_sport, ast_inet_ntoa(ip_hdr->ip_dst), udp_hdr->uh_dport);
 }
 
-static void __nettap_thread(void *data) {
+static void nettap_thread(void *data) {
   int ret;
   char* dev;
   char errbuf[PCAP_ERRBUF_SIZE];
@@ -67,7 +71,7 @@ static void __nettap_thread(void *data) {
   if (dev == NULL) { ast_log(LOG_ERROR, "Couldn't get pcap device!!!!"); return; }
 
   ret = pcap_lookupnet(dev, &net_ip, &mask_ip, errbuf);
-  if(ret == -1) { ast_log(LOG_ERROR, "%s\n", errbuf); return dev; }
+  if(ret == -1) { ast_log(LOG_ERROR, "%s\n", errbuf); return; }
 
   log_addr("NET:", net_ip);
   log_addr("MASK:", mask_ip);
@@ -78,19 +82,18 @@ static void __nettap_thread(void *data) {
 
   if (perform_filter(descr, &fp, net_ip, mask_ip)) { return; }
 
-  pcap_loop(descr, -1, __process_packet, NULL);
+  pcap_loop(descr, -1, process_packet, NULL);
 }
 
-static void __ast_nettap_start()
-{
+static void ast_nettap_start() {
   pthread_t t;
 
   /* Start the thread running. */
-  if (ast_pthread_create_detached(&t, NULL, __nettap_thread, NULL)) {
+  if (ast_pthread_create_detached(&t, NULL, nettap_thread, NULL)) {
     ast_log(LOG_WARNING, "Failed to create nettap thread\n");
   }
 }
 
 void redroute_init_pcap() {
-  __ast_nettap_start();
+  ast_nettap_start();
 }
