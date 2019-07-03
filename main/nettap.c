@@ -19,21 +19,19 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 void log_addr (char* label, bpf_u_int32 address) {
   struct in_addr addr;
-  char* net;
   addr.s_addr = address;
-  net = ast_inet_ntoa(addr);
-  ast_log(LOG_NOTICE, "%s: %s\n",label, net);
+  ast_log(LOG_NOTICE, "%s: %s\n",label, ast_inet_ntoa(addr));
 }
 
 void process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_char* packet) {
-  const struct ip* ip_hdr;
+  struct ip* ip_hdr;
   
   ip_hdr = (struct ip*)(packet + sizeof(struct ether_header));
-  ast_log(LOG_NOTICE, "Grabbed packet of length %d ip ver: %d from: %s to: %s\n",hdr->len, ip_hdr.ip_v,
+  ast_log(LOG_NOTICE, "packet len: %d ip ver: %d from: %s to: %s\n",hdr->len, ip_hdr->ip_v,
     ast_inet_ntoa(ip_hdr->ip_src), ast_inet_ntoa(ip_hdr->ip_dst));
 }
 
-static void *nettap_thread(void *data) {
+static void nettap_thread(void *data) {
   int ret;
   char* dev;
   char errbuf[PCAP_ERRBUF_SIZE];
@@ -42,7 +40,7 @@ static void *nettap_thread(void *data) {
   bpf_u_int32 mask_ip;
   struct bpf_program fp;
 
-  u_char *ptr; /* printing out hardware header info */
+  /*u_char *ptr;  printing out hardware header info */
 
   ast_log(LOG_DEBUG, "Started Net Capture Thread\n");
 
