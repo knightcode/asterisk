@@ -20,7 +20,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 void log_addr (char* label, bpf_u_int32 address);
 int perform_filter(pcap_t* descr, struct bpf_program* fp, bpf_u_int32 net_ip, bpf_u_int32 mask_ip);
 void process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_char* packet);
-static void nettap_thread(void *data);
+static void* nettap_thread(void *data);
 static void ast_nettap_start();
 
 void log_addr (char* label, bpf_u_int32 address) {
@@ -34,8 +34,8 @@ int perform_filter(pcap_t* descr, struct bpf_program* fp, bpf_u_int32 net_ip, bp
   struct in_addr addr;
   addr.s_addr = net_ip;
 
-  sprintf(buf, "ip proto udp and dst net %s", ast_inet_ntoa(addr));
-  /* filter for UDP (RTP) traffic only */
+  sprintf(buf, "ip proto udp");
+  /* filter for UDP (RTP) traffic only, 'and dst net %s' */
   ast_log(LOG_NOTICE, "Using filter: %s\n", buf);
   if(pcap_compile(descr, fp, buf, 0, mask_ip) == -1) { ast_log(LOG_ERROR, "Error calling pcap_compile\n"); return 1; }
   if(pcap_setfilter(descr, fp) == -1) { ast_log(LOG_ERROR,"Error setting filter\n"); return 1; }
@@ -53,12 +53,12 @@ void process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_ch
     ast_inet_ntoa(ip_hdr->ip_src), udp_hdr->source, ast_inet_ntoa(ip_hdr->ip_dst), udp_hdr->dest);
 }
 
-static void nettap_thread(void *data) {
+static void* nettap_thread(void *data) {
   int ret;
   char* dev;
   char errbuf[PCAP_ERRBUF_SIZE];
   pcap_t* descr;
-  bpf_u_int32 net_ip;
+  bpf_u_int32 subnet;
   bpf_u_int32 mask_ip;
   struct bpf_program fp;
 
@@ -68,21 +68,22 @@ static void nettap_thread(void *data) {
 
   dev = pcap_lookupdev(errbuf);
 
-  if (dev == NULL) { ast_log(LOG_ERROR, "Couldn't get pcap device!!!!"); return; }
+  if (dev == NULL) { ast_log(LOG_ERROR, "Couldn't get pcap device!!!!"); return NULL; }
 
-  ret = pcap_lookupnet(dev, &net_ip, &mask_ip, errbuf);
-  if(ret == -1) { ast_log(LOG_ERROR, "%s\n", errbuf); return; }
+  ret = pcap_lookupnet(dev, &subnet, &mask_ip, errbuf);
+  if(ret == -1) { ast_log(LOG_ERROR, "%s\n", errbuf); return NULL; }
 
-  log_addr("NET:", net_ip);
+  log_addr("NET:", subnet);
   log_addr("MASK:", mask_ip);
 
   descr = pcap_open_live(dev, BUFSIZ, 0, -1, errbuf);
 
-  if (descr == NULL) { ast_log(LOG_ERROR, "pcap_open_live(): %s\n", errbuf); return;}
+  if (descr == NULL) { ast_log(LOG_ERROR, "pcap_open_live(): %s\n", errbuf); return NULL; }
 
-  if (perform_filter(descr, &fp, net_ip, mask_ip)) { return; }
+  if (perform_filter(descr, &fp, subnet, mask_ip)) { return NULL; }
 
   pcap_loop(descr, -1, process_packet, NULL);
+  return NULL;
 }
 
 static void ast_nettap_start() {
