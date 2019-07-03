@@ -37,7 +37,8 @@ int perform_filter(pcap_t* descr, struct bpf_program* fp, bpf_u_int32 net_ip, bp
   sprintf(buf, "ip proto udp");
   /* filter for UDP (RTP) traffic only, 'and dst net %s' */
   ast_log(LOG_NOTICE, "Using filter: %s\n", buf);
-  if(pcap_compile(descr, fp, buf, 0, mask_ip) == -1) { ast_log(LOG_ERROR, "Error calling pcap_compile\n"); return 1; }
+  if(pcap_compile(descr, fp, buf, 1, mask_ip) < 0) {
+    ast_log(LOG_ERROR, "pcap_compile error: %s\n", pcap_geterr(descr)); return 1; }
   if(pcap_setfilter(descr, fp) == -1) { ast_log(LOG_ERROR,"Error setting filter\n"); return 1; }
 
   return 0;
