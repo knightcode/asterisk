@@ -4,6 +4,7 @@
 ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <pcap.h>
+#include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -21,6 +22,19 @@ void log_addr (char* label, bpf_u_int32 address) {
   struct in_addr addr;
   addr.s_addr = address;
   ast_log(LOG_NOTICE, "%s: %s\n",label, ast_inet_ntoa(addr));
+}
+
+int perform_filter(pcap_t* descr, bpf_program* fp, bpf_u_int32 net_ip, bpf_u_int32 mask_ip) {
+  char buf[256];
+  struct in_addr addr;
+  addr.s_addr = net_ip;
+
+  sprintf(buf, "ip proto udp dst net %s", ast_inet_ntoa(addr));
+  /* filter for UDP (RTP) traffic only */
+  if(pcap_compile(descr, fp, buf, 0, mask_ip) == -1) { ast_log(LOG_ERROR, "Error calling pcap_compile\n"); return 1; }
+  if(pcap_setfilter(descr, fp) == -1) { ast_log(LOG_ERROR,"Error setting filter\n"); return 1; }
+
+  return 0;
 }
 
 void process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_char* packet) {
@@ -58,8 +72,7 @@ static void nettap_thread(void *data) {
 
   if (descr == NULL) { ast_log(LOG_ERROR, "pcap_open_live(): %s\n", errbuf); return;}
 
-  /*if(pcap_compile(descr, &fp, "dst host ", 0, mask_ip) == -1) { ast_log(LOG_ERROR, "Error calling pcap_compile\n"); return; }
-  /if(pcap_setfilter(descr, &fp) == -1) { ast_log(LOG_ERROR,"Error setting filter\n"); return; }*/
+  if (perform_filter(descr, &fp, net_ip, mask_ip)) { return; }
 
   pcap_loop(descr, -1, process_packet, NULL);
 }
