@@ -34,7 +34,7 @@ int perform_filter(pcap_t* descr, struct bpf_program* fp, bpf_u_int32 net_ip, bp
   struct in_addr addr;
   addr.s_addr = net_ip;
 
-  sprintf(buf, "ip proto udp");
+  sprintf(buf, "dst net %s", ast_inet_ntoa(addr));
   /* filter for UDP (RTP) traffic only, 'and dst net %s' */
   ast_log(LOG_NOTICE, "Using filter: %s\n", buf);
   if(pcap_compile(descr, fp, buf, 1, mask_ip) < 0) {
