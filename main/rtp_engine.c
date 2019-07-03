@@ -176,6 +176,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/utils.h"             /* for ast_free, ast_strdup, etc */
 #include "asterisk/vector.h"            /* for AST_VECTOR_GET, etc */
 
+#include "asterisk/nettap.h"
+
 struct ast_srtp_res *res_srtp = NULL;
 struct ast_srtp_policy_res *res_srtp_policy = NULL;
 
@@ -215,6 +217,9 @@ struct ast_rtp_instance {
 	time_t last_tx;
 	/*! Time of last packet received */
 	time_t last_rx;
+
+	/* packet queue for this engine*/
+	struct redroute_packets packet_queue;
 };
 
 /*! List of RTP engines that are currently registered */
@@ -472,6 +477,8 @@ struct ast_rtp_instance *ast_rtp_instance_new(const char *engine_name,
 		return NULL;
 	}
 	ao2_unlock(instance);
+
+	instance->packet_queue = AST_LIST_HEAD_INIT_VALUE;
 
 	ast_debug(1, "RTP instance '%p' is setup and ready to go\n", instance);
 
