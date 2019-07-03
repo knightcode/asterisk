@@ -32,6 +32,7 @@
 ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/config.h"
+#include "asterisk/nettap.h"
 #include "asterisk/netsock2.h"
 #include "asterisk/utils.h"
 #include "asterisk/threadstorage.h"
