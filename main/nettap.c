@@ -10,6 +10,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 
 #include "asterisk/logger.h"
+#include "asterisk/network.h"
 #include "asterisk/utils.h"
 
 char *__get_pcap_device() {
@@ -44,7 +45,7 @@ char *__get_pcap_device() {
 
   /* get the network address in a human readable form */
   addr.s_addr = netp;
-  net = inet_ntoa(addr);
+  net = ast_inet_ntoa(addr);
 
   if(net == NULL) {
     ast_log(LOG_ERROR, "inet_ntoa");
@@ -55,7 +56,7 @@ char *__get_pcap_device() {
 
   /* do the same as above for the device's mask */
   addr.s_addr = maskp;
-  mask = inet_ntoa(addr);
+  mask = ast_inet_ntoa(addr);
   
   if(mask == NULL) {
     ast_log(LOG_ERROR, "inet_ntoa");
@@ -77,9 +78,7 @@ static void *nettap_thread(void *data) {
   char* dev;
   char errbuf[PCAP_ERRBUF_SIZE];
   pcap_t* descr;
-  const u_char *packet;
-  struct pcap_pkthdr hdr;     /* pcap.h */
-  struct ether_header *eptr;  /* net/ethernet.h */
+  struct bpf_program fp;
 
   u_char *ptr; /* printing out hardware header info */
 
@@ -90,12 +89,18 @@ static void *nettap_thread(void *data) {
     return;
   }
 
-  descr = pcap_open_live(dev,BUFSIZ,0,-1,errbuf);
+  descr = pcap_open_live(dev,BUFSIZ, 0, -1, errbuf);
 
   if (descr == NULL) {
     ast_log(LOG_ERROR, "pcap_open_live(): %s\n", errbuf);
     return;
   }
+
+  if(pcap_compile(descr,&fp,argv[1],0,netp) == -1)
+  { fprintf(stderr,"Error calling pcap_compile\n"); exit(1); }
+
+  if(pcap_setfilter(descr,&fp) == -1)
+  { fprintf(stderr,"Error setting filter\n"); exit(1); }
 
   pcap_loop(descr, -1, process_packet, NULL);
 }
