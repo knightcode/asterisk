@@ -588,8 +588,14 @@ ssize_t ast_recvfrom(int sockfd, void *buf, size_t len, int flags,
 		     struct ast_sockaddr *src_addr)
 {
 	src_addr->len = sizeof(src_addr->ss);
-	return recvfrom(sockfd, buf, len, flags,
+	ssize_t res = recvfrom(sockfd, buf, len, flags,
 			(struct sockaddr *)&src_addr->ss, &src_addr->len);
+	if (res == 26) {
+          ast_log(LOG_DTMF, "RedRoute - DTMF sized packet %i !!!!!!!!!!!!!!!\n", res);
+        } else if (res != 172 && res != 42) {
+          ast_log(LOG_NOTICE, "RedRoute - in func, size %i\n", res);
+	}
+        return res;
 }
 
 ssize_t ast_sendto(int sockfd, const void *buf, size_t len, int flags,

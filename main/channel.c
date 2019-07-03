@@ -37,6 +37,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include <signal.h>
 #include <math.h>
 
+/* RedRoute Includes */
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "asterisk/paths.h"	/* use ast_config_AST_SYSTEM_NAME */
 
 #include "asterisk/pbx.h"
@@ -3797,6 +3802,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 	struct ast_frame *f = NULL;	/* the return value */
 	int prestate;
 	int cause = 0;
+	/*ast_log(LOG_ERROR, "RedRoute - Start of __ast_read. Pointer %x\n", chan);*/
 
 	/* this function is very long so make sure there is only one return
 	 * point at the end (there are only two exceptions to this).
@@ -3820,6 +3826,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 		if (ast_channel_softhangup_internal_flag(chan)) {
 			ast_queue_control(chan, AST_CONTROL_END_OF_Q);
 		} else {
+			ast_log(LOG_ERROR, "RedRoute - In goto done.\n");
 			goto done;
 		}
 	} else {
@@ -3882,6 +3889,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			}
 
 			/* cannot 'goto done' because the channel is already unlocked */
+			/*ast_log(LOG_ERROR, "RedRoute - Frametype: AST_TIMING_EVENT_EXPIRED\n");*/
 			return &ast_null_frame;
 
 		case AST_TIMING_EVENT_CONTINUOUS:
@@ -3902,6 +3910,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 		ast_channel_generatordata_set(chan, tmp);
 		f = &ast_null_frame;
 		ast_channel_fdno_set(chan, -1);
+		ast_log(LOG_ERROR, "RedRoute - AST_GENERATOR_FD is set\n");
 		goto done;
 	} else if (ast_channel_fd_isset(chan, AST_JITTERBUFFER_FD) && ast_channel_fdno(chan) == AST_JITTERBUFFER_FD) {
 		ast_clear_flag(ast_channel_flags(chan), AST_FLAG_EXCEPTION);
@@ -3911,6 +3920,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 	   one sizeof(blah) per frame that we send from it */
 	if (ast_channel_internal_alert_read(chan) == AST_ALERT_READ_FATAL) {
 		f = &ast_null_frame;
+		ast_log(LOG_ERROR, "RedRoute - AST_ALERT_READ_FATAL\n");
 		goto done;
 	}
 
@@ -3924,6 +3934,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			 * some later time. */
 
 			if ( (f->frametype == AST_FRAME_DTMF_BEGIN || f->frametype == AST_FRAME_DTMF_END) && skip_dtmf) {
+				ast_log(LOG_ERROR, "RedRoute - skip_dtmf is true - skipping");
 				continue;
 			}
 
@@ -3936,6 +3947,8 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			/* There were no acceptable frames on the readq. */
 			f = &ast_null_frame;
 			ast_channel_alert_write(chan);
+		} else {
+			ast_log(LOG_ERROR, "RedRoute - dequeued a frame from read queue");
 		}
 
 		/* Interpret hangup and end-of-Q frames to return NULL */
@@ -3998,6 +4011,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 
 		switch (f->frametype) {
 		case AST_FRAME_CONTROL:
+			ast_log(LOG_DTMF, "RedRoute - Frametype: AST_FRAME_CONTROL\n");
 			if (f->subclass.integer == AST_CONTROL_ANSWER) {
 				if (prestate == AST_STATE_UP && ast_channel_is_bridged(chan)) {
 					ast_debug(1, "Dropping duplicate answer!\n");
@@ -4040,7 +4054,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			break;
 		case AST_FRAME_DTMF_END:
 			send_dtmf_end_event(chan, DTMF_RECEIVED, f->subclass.integer, f->len);
-			ast_log(LOG_DTMF, "DTMF end '%c' received on %s, duration %ld ms\n", f->subclass.integer, ast_channel_name(chan), f->len);
+			ast_log(LOG_DTMF, "Frametype: AST_FRAME_DTMF_END - DTMF end '%c' received on %s, duration %ld ms\n", f->subclass.integer, ast_channel_name(chan), f->len);
 			/* Queue it up if DTMF is deferred, or if DTMF emulation is forced. */
 			if (ast_test_flag(ast_channel_flags(chan), AST_FLAG_DEFER_DTMF) || ast_test_flag(ast_channel_flags(chan), AST_FLAG_EMULATE_DTMF)) {
 				queue_dtmf_readq(chan, f);
@@ -4126,7 +4140,8 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			break;
 		case AST_FRAME_DTMF_BEGIN:
 			send_dtmf_begin_event(chan, DTMF_RECEIVED, f->subclass.integer);
-			ast_log(LOG_DTMF, "DTMF begin '%c' received on %s\n", f->subclass.integer, ast_channel_name(chan));
+			ast_log(LOG_DTMF, "Frametype: AST_FRAME_DTMF_BEGIN - DTMF begin '%c' received on %s\n", f->subclass.integer, ast_channel_name(chan));
+			print_trace();
 			if (ast_test_flag(ast_channel_flags(chan), AST_FLAG_DEFER_DTMF | AST_FLAG_END_DTMF_ONLY | AST_FLAG_EMULATE_DTMF) ||
 			    (!ast_tvzero(*ast_channel_dtmf_tv(chan)) &&
 			      ast_tvdiff_ms(ast_tvnow(), *ast_channel_dtmf_tv(chan)) < AST_MIN_DTMF_GAP) ) {
@@ -4145,6 +4160,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			 * is reached , because we want to make sure we pass at least one
 			 * voice frame through before starting the next digit, to ensure a gap
 			 * between DTMF digits. */
+			ast_log(LOG_DTMF, "RedRoute - Frametype: AST_FRAME_NULL\n");
 			if (ast_test_flag(ast_channel_flags(chan), AST_FLAG_EMULATE_DTMF)) {
 				struct timeval now = ast_tvnow();
 				if (!ast_channel_emulate_dtmf_duration(chan)) {
@@ -4176,6 +4192,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			 * is reached , because we want to make sure we pass at least one
 			 * voice frame through before starting the next digit, to ensure a gap
 			 * between DTMF digits. */
+			/*ast_log(LOG_DTMF, "RedRoute - Frametype: AST_FRAME_VOICE\n");*/
 			if (ast_test_flag(ast_channel_flags(chan), AST_FLAG_EMULATE_DTMF) && !ast_channel_emulate_dtmf_duration(chan)) {
 				ast_clear_flag(ast_channel_flags(chan), AST_FLAG_EMULATE_DTMF);
 				ast_channel_dtmf_digit_to_emulate_set(chan, 0);
@@ -4364,10 +4381,12 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			break;
 		default:
 			/* Just pass it on! */
+			ast_log(LOG_DTMF, "RedRoute - Frametype: default case\n");
 			break;
 		}
 	} else {
 		/* Make sure we always return NULL in the future */
+		ast_log(LOG_DTMF, "RedRoute - NULL frame pointer\n");
 		if (!ast_channel_softhangup_internal_flag(chan)) {
 			ast_channel_softhangup_internal_flag_add(chan, AST_SOFTHANGUP_DEV);
 		}
