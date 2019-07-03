@@ -10,6 +10,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 
 #include "asterisk/logger.h"
+#include "asterisk/util.h"
 
 char *__get_pcap_device() {
   char *dev; /* name of the device to use */ 
