@@ -7,7 +7,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
+#include <net/ethernet.h>
+#include <netinet/ether.h>
+#include <netinet/ip.h>
 
 #include "asterisk/logger.h"
 #include "asterisk/network.h"
@@ -24,7 +26,11 @@ void log_addr (char* label, bpf_u_int32 address) {
 }
 
 void process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_char* packet) {
-  ast_log(LOG_NOTICE, "Grabbed packet of length %d\n",hdr->len);
+  const struct ip* ip_hdr;
+  
+  ip_hdr = (struct ip*)(packet + sizeof(struct ether_header));
+  ast_log(LOG_NOTICE, "Grabbed packet of length %d ip ver: %d from: %s to: %s\n",hdr->len, ip_hdr.ip_v,
+    ast_inet_ntoa(ip_hdr->ip_src), ast_inet_ntoa(ip_hdr->ip_dst));
 }
 
 static void *nettap_thread(void *data) {
