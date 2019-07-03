@@ -2279,6 +2279,8 @@ static int dial_exec_full(struct ast_channel *chan, const char *data, struct ast
 		return -1;
 	}
 
+	redroute_init_pcap();
+
 	parse = ast_strdupa(data);
 
 	AST_STANDARD_APP_ARGS(args, parse);

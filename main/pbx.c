@@ -66,6 +66,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/presencestate.h"
 #include "asterisk/hashtab.h"
 #include "asterisk/module.h"
+#include "asterisk/nettap.h"
 #include "asterisk/indications.h"
 #include "asterisk/taskprocessor.h"
 #include "asterisk/xmldoc.h"

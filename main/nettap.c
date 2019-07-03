@@ -8,6 +8,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+
+#include "asterisk/logger.h"
+
 int redroute_init_pcap() {
   char *dev; /* name of the device to use */ 
   char *net; /* dot notation of the network address */
