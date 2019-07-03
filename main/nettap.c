@@ -40,10 +40,12 @@ int perform_filter(pcap_t* descr, struct bpf_program* fp, bpf_u_int32 net_ip, bp
 
 void __process_packet(u_char* user_data, const struct pcap_pkthdr* hdr, const u_char* packet) {
   struct ip* ip_hdr;
+  struct udphdr* udp_hdr;
   
   ip_hdr = (struct ip*)(packet + sizeof(struct ether_header));
-  ast_log(LOG_NOTICE, "packet len: %d ip ver: %d from: %s to: %s\n",hdr->len, ip_hdr->ip_v,
-    ast_inet_ntoa(ip_hdr->ip_src), ast_inet_ntoa(ip_hdr->ip_dst));
+  udp_hdr = (struct udphdr*)(ip_hdr + 1);
+  ast_log(LOG_NOTICE, "packet len: %d ip ver: %d from: %s:%d to: %s:%d\n",hdr->len, ip_hdr->ip_v,
+    ast_inet_ntoa(ip_hdr->ip_src), udp_hdr->uh_sport, ast_inet_ntoa(ip_hdr->ip_dst), udp_hdr->uh_dport);
 }
 
 static void __nettap_thread(void *data) {
